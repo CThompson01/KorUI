@@ -34,7 +34,7 @@ chmod +x korui_test
 
 ## TODO
 
-[x] Overhaul UIElement creation using pointers
-[ ] Utilize function pointers for render and input detection to cut down CPU time and allow overrides
-[ ] Combine Pressed and Released functions into one input function
-[ ] Utilize void pointers with callbacks for UI input
+- [ ] Utilize function pointers for render and input detection to cut down CPU time and allow overrides
+- [ ] Combine Pressed and Released functions into one input function
+- [ ] Utilize void pointers with callbacks for UI input
+- [x] Overhaul UIElement creation using pointers
