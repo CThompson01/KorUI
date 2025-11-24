@@ -4,16 +4,11 @@
 #include "raylib.h"
 #include "korui.h"
 
-/***** Buttons *****/
-UIButton CreateButton(char label[], int x, int y, int width, int height) {
-    UIButton button = {x, y, width, height, &DefaultButtonCallback};
-    strcpy(button.label, label);
-    button.pressed = 0;
-    return button;
-}
-
-void initialize_uibutton(UIButton *button, char label[], int x, int y, int width, int height) {
-    *button = (UIButton) {
+/***********
+ * Buttons *
+ ***********/
+void InitializeButton(UIButton *p_button, char label[], int x, int y, int width, int height) {
+    *p_button = (UIButton) {
         .x = x,
         .y = y,
         .width = width,
@@ -21,7 +16,7 @@ void initialize_uibutton(UIButton *button, char label[], int x, int y, int width
         .pressed = 0,
         .callback = &DefaultButtonCallback
     };
-    strcpy(button->label, label);
+    strcpy(p_button->label, label);
 }
 
 void DrawButton(UIButton button, Font font) {
@@ -47,20 +42,22 @@ int CheckButtonPress(UIButton button, int mx, int my) {
         (xDiff > 0) && (yDiff > 0);
 }
 
-void ButtonPressed(UIButton *button, int mx, int my) {
-    if (CheckButtonPress(*button, mx, my)) {
-        printf("[Button Event] %s pressed\n", button->label);
-        button->pressed = 1;
+void ButtonPressed(UIButton *p_button, int mx, int my) {
+    if (CheckButtonPress(*p_button, mx, my)) {
+        printf("[Button Event] %s pressed\n", p_button->label);
+        p_button->pressed = 1;
     }
 }
 
-void ButtonReleased(UIButton *button, int mx, int my) {
-    if (CheckButtonPress(*button, mx, my) && button->pressed) {
-        printf("[Button Event] %s released\n", button->label);
-        button->pressed = 0;
-        button->callback();
-    } else {
-        button->pressed = 0;
+void ButtonReleased(UIButton *p_button, int mx, int my) {
+    if (p_button->pressed) {
+        if (CheckButtonPress(*p_button, mx, my)) {
+            printf("[Button Event] %s released\n", p_button->label);
+            p_button->pressed = 0;
+            p_button->callback();
+        } else {
+            p_button->pressed = 0;
+        }
     }
 }
 
@@ -69,11 +66,18 @@ int DefaultButtonCallback() {
     return 0;
 }
 
-/***** Number Label *****/
-UINumberLabel CreateNumberLabel(char label[], int *value, int x, int y, int width, int height) {
-    UINumberLabel numLabel = {x, y, width, height, value};
-    strcpy(numLabel.label, label);
-    return numLabel;
+/****************
+ * Number Label *
+ ****************/
+void InitializeNumberLabel(UINumberLabel *p_numberLabel, char label[], int *value, int x, int y, int width, int height) {
+    *p_numberLabel = (UINumberLabel) {
+        .value = value,
+        .x = x,
+        .y = y,
+        .width = width,
+        .height = height
+    };
+    strcpy(p_numberLabel->label, label);
 }
 
 void DrawNumberLabel(UINumberLabel numLabel, Font font) {
@@ -85,31 +89,38 @@ void DrawNumberLabel(UINumberLabel numLabel, Font font) {
         28, 0, WHITE);
 }
 
-/***** Scroll Selector *****/
-ScrollSelector* CreateScrollSelector(char label[], char *list_of_options[], int num_options, int x, int y) {
-    ScrollSelector *scroll_selector = malloc(sizeof(ScrollSelector) + (num_options*sizeof(char*)));
+/*******************
+ * Scroll Selector *
+ *******************/
+ScrollSelector* InitializeScrollSelector(ScrollSelector *p_scrollSelector, char label[], char *list_of_options[], int num_options, int x, int y) {
+    p_scrollSelector = malloc(sizeof(ScrollSelector) + (num_options*sizeof(char*)));
     
-    scroll_selector->num_options = num_options;
-    scroll_selector->selected = 0;
-    scroll_selector->x = x;
-    scroll_selector->y = y;
-    strcpy(scroll_selector->label, label);
+    if (p_scrollSelector == NULL) {
+        printf("Memory Allocation for %s Failed\n", label);
+        return NULL;
+    }
+
+    p_scrollSelector->num_options = num_options;
+    p_scrollSelector->selected = 0;
+    p_scrollSelector->x = x;
+    p_scrollSelector->y = y;
+    strcpy(p_scrollSelector->label, label);
     
     for (int i = 0; i < num_options; i++) {
-        scroll_selector->options[i] = list_of_options[i];
+        p_scrollSelector->options[i] = list_of_options[i];
     }
 
     // Default values
-    scroll_selector->display_y = -1;
-    scroll_selector->display_width = -1;
-    scroll_selector->display_height = -1;
-    scroll_selector->button_r_x = -1;
-    scroll_selector->button_l_x = -1;
-    scroll_selector->left_pressed = 0;
-    scroll_selector->right_pressed = 0;
-    scroll_selector->OnChange = NULL;
+    p_scrollSelector->display_y = -1;
+    p_scrollSelector->display_width = -1;
+    p_scrollSelector->display_height = -1;
+    p_scrollSelector->button_r_x = -1;
+    p_scrollSelector->button_l_x = -1;
+    p_scrollSelector->left_pressed = 0;
+    p_scrollSelector->right_pressed = 0;
+    p_scrollSelector->OnChange = NULL;
 
-    return scroll_selector;
+    return p_scrollSelector;
 }
 
 // X position is centered, Y position is top
@@ -246,7 +257,7 @@ void ScrollSelectorReleased(ScrollSelector *s, int mx, int my) {
     }
 }
 
-void ChangeScrollSelectorOptions(ScrollSelector *s, char *list_of_options[], int num_options) {
+ScrollSelector* ChangeScrollSelectorOptions(ScrollSelector *s, char *list_of_options[], int num_options) {
     // Resize the Scroll Selector memory to fit the new number of options
     s = realloc(s, sizeof(ScrollSelector) + (num_options*sizeof(char*)));
 
@@ -257,6 +268,8 @@ void ChangeScrollSelectorOptions(ScrollSelector *s, char *list_of_options[], int
     for (int i = 0; i < num_options; i++) {
         s->options[i] = list_of_options[i];
     }
+
+    return s;
 }
 
 void updateScrollSelectorPositions(ScrollSelector *s, Font font) {
@@ -295,13 +308,13 @@ void DrawUIElement(UIElement element, Font font) {
     }
 }
 
-void CheckUIElementPressed(UIElement element, int mx, int my) {
-    switch (element.type) {
+void CheckUIElementPressed(UIElement *p_element, int mx, int my) {
+    switch (p_element->type) {
         case UIT_BUTTON:
-            ButtonPressed(&element.element.button, mx, my);
+            ButtonPressed(&p_element->element.button, mx, my);
             break;
         case UIT_SCROLLSELECTOR:
-            ScrollSelectorPressed(element.element.scrollSelector, mx, my);
+            ScrollSelectorPressed(p_element->element.scrollSelector, mx, my);
             break;
         default:
             printf("UI Type not an input.\n");
@@ -309,13 +322,13 @@ void CheckUIElementPressed(UIElement element, int mx, int my) {
     }
 }
 
-void CheckUIElementReleased(UIElement element, int mx, int my) {
-    switch (element.type) {
+void CheckUIElementReleased(UIElement *p_element, int mx, int my) {
+    switch (p_element->type) {
         case UIT_BUTTON:
-            ButtonReleased(&element.element.button, mx, my);
+            ButtonReleased(&p_element->element.button, mx, my);
             break;
         case UIT_SCROLLSELECTOR:
-            ScrollSelectorReleased(element.element.scrollSelector, mx, my);
+            ScrollSelectorReleased(p_element->element.scrollSelector, mx, my);
             break;
         default:
             printf("UI Type not an input.\n");
@@ -323,9 +336,9 @@ void CheckUIElementReleased(UIElement element, int mx, int my) {
     }
 }
 
-int GetIndexOfKey(UIElement *elements, int elements_len, char *key) {
+int GetIndexOfKey(UIElement *p_elements, int elements_len, char *key) {
     for (int i = 0; i < elements_len; i++) {
-        if (strcmp(elements[i].key, key) == 0) {
+        if (strcmp(p_elements[i].key, key) == 0) {
             return i;
         }
     }
@@ -354,32 +367,24 @@ void UIElementUpdatePosition(UIElement element, int new_x, int new_y) {
     }
 }
 
-UIElement CreateButtonElement(char key[], char label[], int x, int y, int width, int height) {
-    UIButton button = {x, y, width, height};
-    strcpy(button.label, label);
-    UIElement element = {UIT_BUTTON};
-    strcpy(element.key, key);
-    element.element.button = button;
-    return element;
+void InitializeButtonElement(UIElement *p_buttonElement, char key[], char label[], int x, int y, int width, int height, int (*callback)()) {
+    p_buttonElement->type = UIT_BUTTON;
+    strcpy(p_buttonElement->key, key);
+    InitializeButton(&(p_buttonElement->element.button), label, x, y, width, height);
+    p_buttonElement->element.button.callback = callback;
 }
 
-UIElement CreateNumberLabelElement(char *key, char *label, int *value, int x, int y, int width, int height) {
-    UINumberLabel numLabel = {x, y, width, height, value};
-    strcpy(numLabel.label, label);
-    UIElement element = {UIT_NUMLABEL};
-    strcpy(element.key, key);
-    element.element.numLabel = numLabel;
-    return element;
+void InitializeNumberLabelElement(UIElement *p_numLabelElement, char key[], char label[], int *value, int x, int y, int width, int height) {
+    p_numLabelElement->type = UIT_NUMLABEL;
+    strcpy(p_numLabelElement->key, key);
+    InitializeNumberLabel(&(p_numLabelElement->element.numLabel), label, value, x, y, width, height);
 }
 
-UIElement CreateScrollSelectorElement(char key[], char label[], char *list_of_options[], int num_options, int x, int y) {
-    ScrollSelector *scrollSelector = CreateScrollSelector(label, list_of_options, num_options, x, y);
-    UIElement element = {UIT_SCROLLSELECTOR};
-    strcpy(element.key, key);
-    element.element.scrollSelector = scrollSelector;
-    return element;
+void InitializeScrollSelectorElement(UIElement *p_scrollSelectorElement, char key[], char label[], char *list_of_options[], int num_options, int x, int y) {
+    p_scrollSelectorElement->type = UIT_SCROLLSELECTOR;
+    strcpy(p_scrollSelectorElement->key, key);
+    p_scrollSelectorElement->element.scrollSelector = InitializeScrollSelector(p_scrollSelectorElement->element.scrollSelector, label, list_of_options, num_options, x, y);
 }
-
 
 /***************
  * Layout Code *
